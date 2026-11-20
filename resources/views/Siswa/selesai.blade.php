@@ -53,10 +53,10 @@
                     <span
                         class="font-mono-code font-bold text-slate-900">{{ $hasilTes?->siswa?->kode_peserta ?? '-' }}</span>
                 </div>
-                <div class="bg-white rounded-xl px-3.5 py-2.5 flex items-center justify-between">
+                {{-- <div class="bg-white rounded-xl px-3.5 py-2.5 flex items-center justify-between">
                     <span class="text-slate-500">Jumlah Soal Dikerjakan</span>
                     <span class="font-bold text-slate-900">{{ $hasilTes?->jumlah_butir ?? 0 }} Soal</span>
-                </div>
+                </div> --}}
                 <div class="bg-white rounded-xl px-3.5 py-2.5 flex items-center justify-between">
                     <span class="text-slate-500">Status Pengiriman</span>
                     <span class="font-bold text-[#1456E8] inline-flex items-center gap-1">

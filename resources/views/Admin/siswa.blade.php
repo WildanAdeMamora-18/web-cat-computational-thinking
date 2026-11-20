@@ -156,13 +156,25 @@
             <h3 class="text-base font-extrabold text-slate-900 mb-4">Tambah Peserta Baru</h3>
             <form action="{{ route('admin.siswa.simpan') }}" method="POST" class="space-y-3 text-xs">
                 @csrf
-                <div><label class="font-bold block mb-1">Kode Peserta</label><input type="text" name="kode_peserta"
-                        placeholder="MPK1-04" required
-                        class="w-full bg-slate-100 rounded-xl px-3.5 py-2.5 uppercase font-mono-code"></div>
-                <div><label class="font-bold block mb-1">Nama Lengkap</label><input type="text" name="nama" required
-                        class="w-full bg-slate-100 rounded-xl px-3.5 py-2.5"></div>
-                <div><label class="font-bold block mb-1">Kelas</label><input type="text" name="kelas" value="X MPK 1"
-                        required class="w-full bg-slate-100 rounded-xl px-3.5 py-2.5"></div>
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="font-bold text-slate-700">Kode Peserta</label>
+                        <span class="text-[10px] font-semibold text-[#1456E8] bg-[#EEF2FF] px-2 py-0.5 rounded">Otomatis &
+                            Terkunci</span>
+                    </div>
+                    <input type="text" value="{{ $kodeOtomatis }}" readonly
+                        class="w-full bg-slate-200/80 text-slate-600 font-bold rounded-xl px-3.5 py-2.5 uppercase font-mono-code cursor-not-allowed outline-none">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-700 block mb-1">Nama Lengkap *</label>
+                    <input type="text" name="nama" placeholder="Masukkan nama lengkap siswa" required
+                        class="w-full bg-slate-100 rounded-xl px-3.5 py-2.5 uppercase focus:ring-2 focus:ring-[#1456E8] outline-none">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-700 block mb-1">Kelas *</label>
+                    <input type="text" name="kelas" value="X MPK 1" required
+                        class="w-full bg-slate-100 rounded-xl px-3.5 py-2.5 focus:ring-2 focus:ring-[#1456E8] outline-none">
+                </div>
                 <div class="flex justify-end gap-2 pt-3">
                     <button type="button" onclick="document.getElementById('modalTambahSiswa').classList.add('hidden')"
                         class="px-4 py-2 rounded-xl border font-bold">Batal</button>
@@ -178,13 +190,25 @@
             <h3 class="text-base font-extrabold text-slate-900 mb-4">Edit Data Peserta</h3>
             <form id="formEditSiswa" method="POST" class="space-y-3 text-xs">
                 @csrf @method('PUT')
-                <div><label class="font-bold block mb-1">Kode Peserta</label><input type="text" id="editKode"
-                        name="kode_peserta" required
-                        class="w-full bg-slate-100 rounded-xl px-3.5 py-2.5 uppercase font-mono-code"></div>
-                <div><label class="font-bold block mb-1">Nama Lengkap</label><input type="text" id="editNama"
-                        name="nama" required class="w-full bg-slate-100 rounded-xl px-3.5 py-2.5"></div>
-                <div><label class="font-bold block mb-1">Kelas</label><input type="text" id="editKelas"
-                        name="kelas" required class="w-full bg-slate-100 rounded-xl px-3.5 py-2.5"></div>
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="font-bold text-slate-700">Kode Peserta</label>
+                        <span class="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">Tidak dapat
+                            diubah</span>
+                    </div>
+                    <input type="text" id="editKode" readonly
+                        class="w-full bg-slate-200/80 text-slate-600 font-bold rounded-xl px-3.5 py-2.5 uppercase font-mono-code cursor-not-allowed outline-none">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-700 block mb-1">Nama Lengkap *</label>
+                    <input type="text" id="editNama" name="nama" required
+                        class="w-full bg-slate-100 rounded-xl px-3.5 py-2.5 uppercase focus:ring-2 focus:ring-[#1456E8] outline-none">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-700 block mb-1">Kelas *</label>
+                    <input type="text" id="editKelas" name="kelas" required
+                        class="w-full bg-slate-100 rounded-xl px-3.5 py-2.5 focus:ring-2 focus:ring-[#1456E8] outline-none">
+                </div>
                 <div class="flex justify-end gap-2 pt-3">
                     <button type="button" onclick="document.getElementById('modalEditSiswa').classList.add('hidden')"
                         class="px-4 py-2 rounded-xl border font-bold">Batal</button>

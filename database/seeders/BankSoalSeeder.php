@@ -25,14 +25,60 @@ class BankSoalSeeder extends Seeder
             ['status' => 'aktif', 'waktu_mulai' => now()]
         );
 
-        // 3. Contoh 3 Kode Siswa Uji Coba
-        $contohSiswa = [
-            ['kode_peserta' => 'MPK1-01', 'nama' => 'Siswa Uji 01', 'kelas' => 'X MPK 1'],
-            ['kode_peserta' => 'MPK1-02', 'nama' => 'Siswa Uji 02', 'kelas' => 'X MPK 1'],
-            ['kode_peserta' => 'MPK1-03', 'nama' => 'Siswa Uji 03', 'kelas' => 'X MPK 1'],
+        // 3. Data 36 Siswa Kelas X MPK 1 (SMKN 1 Pogalan)
+        $namaSiswaMpk1 = [
+            'ADINTA SIFA SAHARANI',
+            'ALIF ZUNIFA SALSA BILLA',
+            'ANING FAIDATUS SHOLIKAH',
+            'AQISTA AYU PUTIKA SARI',
+            'DEA ANISSATU ROCHMAH',
+            'DELIA CHARISTA PUTRI',
+            'DHESVITA DIANING PUTRI',
+            'DILA AFIFAH PUTRI MEIDIKA',
+            'ELINDA NIDAMATUL INAYAH',
+            'ELISA ANGGRAENI',
+            'EVI NADIA PUTRI',
+            'IZA NAZATUN NADZIAH',
+            'JASINDA DWITA PRAMESWARI',
+            'KALYSTA RAMADHANI SYAHRA',
+            'KAYLA FABIANA PUTRI',
+            'KAYLA RAMADHANI SYAHRA',
+            'KEYSHA AZZAHRA',
+            'KIAS DWI KHAIRANI',
+            'MAHIRA HASNA KAMILA',
+            'MARCELENA PUTRI PRATAMA',
+            'MARWA .N. KAREPESINA',
+            'MEGA WAHYU DEWI PERTIWI',
+            'MELLY BELA RINATA',
+            'NAYLA FATIMATUZ ZAHRA',
+            'NADIA CINDI OKTAVIANI',
+            'NAJMA FILZA FARZANA',
+            'NUR FITRIA SARIFFATUL AZIZAH',
+            'OLIVIA RISKE NARITA',
+            'RACHEL SINTYA APRILDA',
+            'SHAFA SALSABILA THAHIRAH',
+            'SITI AZIFATIL ASIFAH',
+            'SOFIA ADELLIA RAHMADANI',
+            'TIFANY SELFIA YUNITASARI',
+            'VIANA ALIAH SYAHWA',
+            'VINA ALVIANINGSIH',
+            'ZUMROTIN ENGRIS NURJANNAH',
         ];
-        foreach ($contohSiswa as $s) {
-            Siswa::updateOrCreate(['kode_peserta' => $s['kode_peserta']], $s);
+
+        // Hapus data dummy lama agar bersih
+        Siswa::whereIn('kode_peserta', ['MPK1-01', 'MPK1-02', 'MPK1-03'])->delete();
+
+        foreach ($namaSiswaMpk1 as $index => $nama) {
+            $nomorUrut = str_pad($index + 1, 3, '0', STR_PAD_LEFT);
+            $kode = 'MPK1-' . $nomorUrut;
+
+            Siswa::updateOrCreate(
+                ['kode_peserta' => $kode],
+                [
+                    'nama'  => trim($nama),
+                    'kelas' => 'X MPK 1',
+                ]
+            );
         }
 
         // 4. 40 Butir Soal Berpikir Komputasional (Nilai b sementara disebar -1.5 s/d +1.5 untuk simulasi sebelum kalibrasi Rasch diinput)
@@ -83,7 +129,16 @@ class BankSoalSeeder extends Seeder
             [40, 'Analisis dan Evaluasi Solusi', "Gelas P berisi jus, gelas Q berisi susu, dan gelas R kosong. Ketiga gelas berukuran sama dan setiap gelas hanya muat satu isi penuh. Tanpa mencampur cairan, isi P dan Q harus saling bertukar. Notasi X → Y berarti menuang seluruh isi gelas X ke gelas Y. Urutan penuangan yang benar adalah ...", 'P → Q, Q → R, R → P', 'Q → P, P → R, R → Q', 'P → R, Q → P, R → Q', 'R → P, Q → R, P → Q', 'P → R, R → Q, Q → P', 'C', 1.45],
         ];
 
+        $soalTidakDipakai = [9, 11, 12, 19, 35];
+
+        // Hapus 5 soal yang tidak dipakai jika sudah terlanjur masuk ke database
+        ButirSoal::whereIn('nomor_butir', $soalTidakDipakai)->delete();
+
         foreach ($daftarSoal as $item) {
+            if (in_array($item[0], $soalTidakDipakai, true)) {
+                continue; // Lewati soal 9, 11, 12, 19, dan 35; nomor_butir lain tetap asli
+            }
+
             ButirSoal::updateOrCreate(
                 ['nomor_butir' => $item[0]],
                 [

@@ -76,6 +76,7 @@ class AdminController extends Controller
 
         $daftarSiswa = $query->paginate(10)->withQueryString();
         $daftarKelas = Siswa::select('kelas')->distinct()->pluck('kelas');
+        $kodeOtomatis = $this->generateKodePesertaBerikutnya();
 
         return view('admin.siswa', compact(
             'daftarSiswa',
@@ -83,38 +84,42 @@ class AdminController extends Controller
             'totalSiswa',
             'sedangUjian',
             'selesaiUjian',
-            'belumLogin'
+            'belumLogin',
+            'kodeOtomatis'
         ));
     }
 
     public function simpanSiswa(Request $request)
     {
         $request->validate([
-            'kode_peserta' => 'required|string|max:30|unique:siswa,kode_peserta',
-            'nama'         => 'required|string|max:100',
-            'kelas'        => 'required|string|max:30',
+            'nama'  => 'required|string|max:100',
+            'kelas' => 'required|string|max:30',
         ]);
+
+        $kodeBaru = $this->generateKodePesertaBerikutnya();
+
         Siswa::create([
-            'kode_peserta' => strtoupper(trim($request->kode_peserta)),
-            'nama'         => trim($request->nama),
+            'kode_peserta' => $kodeBaru,
+            'nama'         => strtoupper(trim($request->nama)),
             'kelas'        => trim($request->kelas),
         ]);
-        return back()->with('sukses', 'Peserta baru berhasil ditambahkan.');
+
+        return back()->with('sukses', "Peserta baru berhasil ditambahkan dengan kode {$kodeBaru}.");
     }
 
     public function updateSiswa(Request $request, Siswa $siswa)
     {
         $request->validate([
-            'kode_peserta' => 'required|string|max:30|unique:siswa,kode_peserta,' . $siswa->id,
-            'nama'         => 'required|string|max:100',
-            'kelas'        => 'required|string|max:30',
+            'nama'  => 'required|string|max:100',
+            'kelas' => 'required|string|max:30',
         ]);
+
         $siswa->update([
-            'kode_peserta' => strtoupper(trim($request->kode_peserta)),
-            'nama'         => trim($request->nama),
-            'kelas'        => trim($request->kelas),
+            'nama'  => strtoupper(trim($request->nama)),
+            'kelas' => trim($request->kelas),
         ]);
-        return back()->with('sukses', 'Data peserta berhasil diperbarui.');
+
+        return back()->with('sukses', "Data peserta {$siswa->kode_peserta} berhasil diperbarui.");
     }
 
     public function hapusSiswa(Siswa $siswa)
@@ -422,5 +427,17 @@ class AdminController extends Controller
             }
             fclose($out);
         }, 'respons_butir_cat_' . date('Ymd_His') . '.csv');
+    }
+
+    // Tambahkan fungsi private ini di dalam AdminController
+    private function generateKodePesertaBerikutnya(): string
+    {
+        $kodeTerakhir = Siswa::where('kode_peserta', 'like', 'MPK1-%')
+            ->orderByRaw('CAST(SUBSTRING(kode_peserta, 6) AS UNSIGNED) DESC')
+            ->value('kode_peserta');
+
+        $nomorBerikutnya = $kodeTerakhir ? ((int) substr($kodeTerakhir, 5)) + 1 : 1;
+
+        return 'MPK1-' . str_pad($nomorBerikutnya, 3, '0', STR_PAD_LEFT);
     }
 }
