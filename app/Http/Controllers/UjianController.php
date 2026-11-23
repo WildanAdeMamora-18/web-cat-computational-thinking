@@ -36,7 +36,7 @@ class UjianController extends Controller
 
         $hasilTes = HasilTes::firstOrCreate(
             ['siswa_id' => $siswa->id, 'sesi_id' => $sesiAktif->id],
-            ['theta_akhir' => config('cat.theta_awal')]
+            ['theta_akhir' => config('cat.theta_awal'), 'waktu_mulai' => now()]
         );
 
         if ($hasilTes->status_tes === 'selesai') {
@@ -64,19 +64,39 @@ class UjianController extends Controller
             return redirect()->route('ujian.selesai');
         }
 
-        // Anti-refresh: hanya pilih soal baru jika butir_aktif_id masih kosong
+        // Anti-refresh: pilih butir pertama jika belum ada butir aktif & set waktu mulai saat soal #1 dibuka
         if (!$hasilTes->butir_aktif_id) {
             $butirPertama = $this->catEngine->pilihButirBerikutnya($hasilTes);
             if (!$butirPertama) {
                 abort(500, 'Bank soal kosong atau belum ada butir yang fit.');
             }
-            $hasilTes->update(['butir_aktif_id' => $butirPertama->id]);
+            $hasilTes->update([
+                'butir_aktif_id' => $butirPertama->id,
+                'waktu_mulai'    => now(),
+            ]);
             $hasilTes->load('butirAktif');
+        }
+
+        // Hitung sisa detik real-time dari server (Durasi 60 menit = 3600 detik)
+        $durasiTotal = 3600;
+        $sudahBerjalan = (int) $hasilTes->waktu_mulai->diffInSeconds(now());
+        $sisaDetik = max(0, $durasiTotal - $sudahBerjalan);
+
+        // Jika waktu sudah habis saat membuka kembali tab, otomatis akhiri tes
+        if ($sisaDetik <= 0) {
+            $hasilTes->update([
+                'butir_aktif_id'  => null,
+                'status_tes'      => 'selesai',
+                'alasan_berhenti' => 'WAKTU_HABIS',
+                'waktu_selesai'   => now(),
+            ]);
+            return redirect()->route('ujian.selesai');
         }
 
         return view('siswa.tes', [
             'soal'      => $hasilTes->butirAktif,
             'nomorUrut' => $hasilTes->jumlah_butir + 1,
+            'sisaDetik' => $sisaDetik,
         ]);
     }
 
@@ -145,6 +165,17 @@ class UjianController extends Controller
         return $hasilTes->status_tes === 'selesai'
             ? redirect()->route('ujian.selesai')
             : redirect()->route('ujian.tes');
+    }
+
+    // Endpoint pencatat jika siswa keluar/pindah tab saat tes
+    public function catatKeluarTab()
+    {
+        $hasilTes = HasilTes::find(session('hasil_tes_id'));
+        if ($hasilTes && $hasilTes->status_tes === 'sedang_mengerjakan') {
+            $hasilTes->increment('jumlah_keluar_tab');
+            $hasilTes->update(['terakhir_keluar_tab' => now()]);
+        }
+        return response()->json(['status' => 'logged']);
     }
 
     public function selesai()

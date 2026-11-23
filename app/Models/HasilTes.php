@@ -14,6 +14,7 @@ class HasilTes extends Model
         'sem_akhir'     => 'float',
         'waktu_mulai'   => 'datetime',
         'waktu_selesai' => 'datetime',
+        'terakhir_keluar_tab' => 'datetime',
     ];
 
     public function siswa()

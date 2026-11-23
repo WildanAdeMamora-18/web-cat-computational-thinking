@@ -12,6 +12,7 @@ Route::middleware('siswa.auth')->prefix('ujian')->name('ujian.')->group(function
     Route::get('/petunjuk', [UjianController::class, 'petunjuk'])->name('petunjuk');
     Route::get('/tes', [UjianController::class, 'tampilSoal'])->name('tes');
     Route::post('/submit', [UjianController::class, 'submitJawaban'])->name('submit');
+    Route::post('/catat-keluar-tab', [UjianController::class, 'catatKeluarTab'])->name('keluar_tab');
     Route::get('/selesai', [UjianController::class, 'selesai'])->name('selesai');
 });
 
@@ -25,9 +26,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/', fn() => redirect()->route('admin.siswa'))->name('dashboard');
 
         // 1. Data Siswa
+        // 1. Data Siswa
         Route::get('/siswa', [AdminController::class, 'siswa'])->name('siswa');
         Route::post('/siswa', [AdminController::class, 'simpanSiswa'])->name('siswa.simpan');
         Route::put('/siswa/{siswa}', [AdminController::class, 'updateSiswa'])->name('siswa.update');
+        Route::post('/siswa/{siswa}/reset-tes', [AdminController::class, 'resetTesSiswa'])->name('siswa.reset');
         Route::delete('/siswa/{siswa}', [AdminController::class, 'hapusSiswa'])->name('siswa.hapus');
         Route::post('/siswa/impor', [AdminController::class, 'imporSiswaCsv'])->name('siswa.impor');
 

@@ -63,7 +63,7 @@ class AdminController extends Controller
         if ($request->filled('q')) {
             $cari = $request->q;
             $query->where(function ($sub) use ($cari) {
-                $sub->where('kode_peserta', 'like', "\%{$cari}%")
+                $sub->where('kode_peserta', 'like', "%{$cari}%")
                     ->orWhere('nama', 'like', "%{$cari}%");
             });
         }
@@ -122,6 +122,26 @@ class AdminController extends Controller
         return back()->with('sukses', "Data peserta {$siswa->kode_peserta} berhasil diperbarui.");
     }
 
+    public function resetTesSiswa(Siswa $siswa)
+    {
+        $sesiAktif = SesiTes::where('status', 'aktif')->first();
+
+        $query = HasilTes::where('siswa_id', $siswa->id);
+        if ($sesiAktif) {
+            $query->where('sesi_id', $sesiAktif->id);
+        }
+
+        $hasilIds = $query->pluck('id');
+
+        if ($hasilIds->isNotEmpty()) {
+            Respons::whereIn('hasil_tes_id', $hasilIds)->delete();
+            HasilTes::whereIn('id', $hasilIds)->delete();
+            return back()->with('sukses', "Tes untuk {$siswa->nama} ({$siswa->kode_peserta}) berhasil direset. Siswa dapat mengerjakan ulang.");
+        }
+
+        return back()->with('sukses', "Peserta {$siswa->kode_peserta} belum memiliki riwayat tes pada sesi aktif.");
+    }
+
     public function hapusSiswa(Siswa $siswa)
     {
         $siswa->delete();
@@ -165,7 +185,7 @@ class AdminController extends Controller
 
         if ($request->filled('q')) {
             $cari = $request->q;
-            $query->where('teks_soal', 'like', "\%{$cari}%");
+            $query->where('teks_soal', 'like', "%{$cari}%");
         }
 
         $semuaSoal    = ButirSoal::all();
@@ -351,7 +371,7 @@ class AdminController extends Controller
         if ($request->filled('q')) {
             $cari = $request->q;
             $tableQuery->whereHas('siswa', function ($q) use ($cari) {
-                $q->where('kode_peserta', 'like', "\%{$cari}%")
+                $q->where('kode_peserta', 'like', "%{$cari}%")
                     ->orWhere('nama', 'like', "%{$cari}%");
             });
         }

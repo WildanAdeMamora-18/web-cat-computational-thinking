@@ -1,0 +1,55 @@
+services:
+  # Service 1: Web Server (Apache + PHP)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cat-laravel-app
+    restart: unless-stopped
+    ports:
+      - "8000:80" # Port forwarding: akses via http://localhost:8000 di host
+    volumes:
+      - "D:/web-cat-computational-thinking:/var/www/html"
+    depends_on:
+      - db
+    networks:
+      - cat-network
+
+  # Service 2: Database (MySQL)
+  db:
+    image: mysql:8.0
+    container_name: cat-laravel-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: cat_computational_thinking
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_USER: laravel_user
+      MYSQL_PASSWORD: secretpassword
+    ports:
+      - "3307:3306" # Port forwarding ke 3307 agar tidak bentrok dengan MySQL lokal
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - cat-network
+
+  # Service 3: phpMyAdmin (Opsional, untuk kelola database via browser)
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: cat-laravel-pma
+    restart: unless-stopped
+    ports:
+      - "8081:80" # Akses via http://localhost:8081 di host
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+    depends_on:
+      - db
+    networks:
+      - cat-network
+
+volumes:
+  db_data:
+
+networks:
+  cat-network:
+    driver: bridge

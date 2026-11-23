@@ -13,15 +13,34 @@
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: #F8FAFC;
+            background-image: radial-gradient(#CBD5E1 0.85px, transparent 0.85px);
+            background-size: 22px 22px;
             color: #0F172A;
         }
 
         .font-mono-code {
             font-family: 'JetBrains Mono', monospace;
+            font-variant-numeric: tabular-nums;
         }
 
         .teks-soal {
             white-space: pre-line;
+        }
+
+        @keyframes fadeSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-masuk {
+            animation: fadeSlideUp 0.28s ease-out forwards;
         }
     </style>
 </head>

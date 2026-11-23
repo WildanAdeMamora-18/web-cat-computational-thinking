@@ -30,11 +30,8 @@
             <!-- Logo Brand -->
             <div class="px-5 py-5 border-b border-slate-100 flex items-center gap-3">
                 <div
-                    class="w-9 h-9 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
+                    class="w-9 h-9 rounded-lg bg-slate-900 border border-slate-200 flex items-center justify-center text-slate-700">
+                    <img src="{{ asset('images/logo-unesa.png') }}" alt="Logo UNESA" class="w-full h-full object-contain">
                 </div>
                 <div>
                     <p class="text-[13px] font-extrabold tracking-tight text-slate-900 leading-none">CAT INFORMATIKA</p>
@@ -124,8 +121,8 @@
 
                 <div class="flex items-center gap-3">
                     <div class="text-right">
-                        <p class="text-xs font-bold text-slate-900 leading-none">Administrator</p>
-                        <p class="text-[11px] text-slate-400 mt-0.5">Proktor Pusat</p>
+                        <p class="text-xs font-bold text-slate-900 leading-none">Admin CAT</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Admin</p>
                     </div>
                     <div class="w-9 h-9 rounded-full bg-[#1456E8] text-white flex items-center justify-center">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

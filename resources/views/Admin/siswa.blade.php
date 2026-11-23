@@ -61,7 +61,7 @@
     </div>
 
     <!-- Bar Filter & Pencarian -->
-    <form method="GET" action="{{ route('admin.siswa') }}"
+    <form id="formCariSiswa" method="GET" action="{{ route('admin.siswa') }}"
         class="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-2xs flex flex-wrap items-center justify-between gap-3">
         <div class="flex flex-wrap items-center gap-2.5">
             <select name="kelas" onchange="this.form.submit()"
@@ -72,11 +72,22 @@
                         {{ $k }}</option>
                 @endforeach
             </select>
+            <a href="{{ route('admin.siswa') }}"
+                class="bg-blue-50 hover:bg-blue-100 text-[#1456E8] text-xs font-bold px-3.5 py-2.5 rounded-xl transition">
+                ↻ Refresh Pantauan Tab
+            </a>
         </div>
         <div class="relative w-full sm:w-72">
-            <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari nama atau kode..."
+            <input type="text" id="inputCariSiswa" name="q" value="{{ request('q') }}"
+                placeholder="Ketik nama atau kode..."
                 class="w-full bg-[#F1F5F9] text-xs rounded-xl pl-4 pr-9 py-2.5 outline-none focus:ring-2 focus:ring-[#1456E8]">
-            <button type="submit" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">🔍</button>
+            @if (request('q'))
+                <a href="{{ route('admin.siswa', ['kelas' => request('kelas')]) }}"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 text-xs font-bold"
+                    title="Hapus pencarian">✕</a>
+            @else
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">🔍</span>
+            @endif
         </div>
     </form>
 
@@ -92,13 +103,15 @@
                         <th class="py-3.5 px-4">NAMA LENGKAP</th>
                         <th class="py-3.5 px-4">KELAS</th>
                         <th class="py-3.5 px-4">STATUS TES</th>
+                        <th class="py-3.5 px-4">AKTIVITAS TAB</th>
                         <th class="py-3.5 px-5 text-right">AKSI</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-xs">
                     @forelse($daftarSiswa as $idx => $s)
                         @php $tes = $s->hasilTes->first(); @endphp
-                        <tr class="hover:bg-slate-50/70 transition">
+                        <tr
+                            class="hover:bg-slate-50/70 transition {{ $tes && $tes->jumlah_keluar_tab > 0 && $tes->status_tes === 'sedang_mengerjakan' ? 'bg-amber-50/40' : '' }}">
                             <td class="py-3.5 px-5 text-slate-400 font-mono-code">
                                 {{ str_pad($daftarSiswa->firstItem() + $idx, 2, '0', STR_PAD_LEFT) }}</td>
                             <td class="py-3.5 px-4">
@@ -110,16 +123,35 @@
                             <td class="py-3.5 px-4">
                                 @if (!$tes)
                                     <span
-                                        class="inline-flex items-center gap-1.5 bg-slate-100 text-slate-600 font-semibold px-2.5 py-1 rounded-full text-[11px]">•
-                                        Belum mulai</span>
+                                        class="inline-flex items-center gap-1.5 bg-red-50 text-red-600 border border-red-200/70 font-bold px-2.5 py-1 rounded-full text-[11px]">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Belum mulai
+                                    </span>
                                 @elseif($tes->status_tes === 'sedang_mengerjakan')
                                     <span
-                                        class="inline-flex items-center gap-1.5 bg-[#EEF2FF] text-[#1456E8] font-semibold px-2.5 py-1 rounded-full text-[11px]">•
-                                        Sedang mengerjakan</span>
+                                        class="inline-flex items-center gap-1.5 bg-blue-50 text-[#1456E8] border border-blue-200/70 font-bold px-2.5 py-1 rounded-full text-[11px]">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-[#1456E8] animate-pulse"></span> Sedang
+                                        mengerjakan
+                                    </span>
                                 @else
                                     <span
-                                        class="inline-flex items-center gap-1.5 bg-slate-200/70 text-slate-800 font-semibold px-2.5 py-1 rounded-full text-[11px]">•
-                                        Selesai</span>
+                                        class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200/70 font-bold px-2.5 py-1 rounded-full text-[11px]">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Selesai
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="py-3.5 px-4">
+                                @if (!$tes)
+                                    <span class="text-slate-400 text-[11px]">-</span>
+                                @elseif($tes->jumlah_keluar_tab > 0)
+                                    <span
+                                        class="inline-flex items-center gap-1 bg-amber-100 text-amber-800 border border-amber-300 font-bold px-2.5 py-1 rounded-lg text-[11px]"
+                                        title="Terakhir keluar: {{ $tes->terakhir_keluar_tab?->format('H:i:s') }}">
+                                        ⚠ Keluar Tab ({{ $tes->jumlah_keluar_tab }}x)
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center gap-1 text-emerald-600 font-semibold text-[11px]">
+                                        ✓ Fokus di Ujian
+                                    </span>
                                 @endif
                             </td>
                             <td class="py-3.5 px-5 text-right space-x-2">
@@ -137,7 +169,8 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="py-8 text-center text-slate-400">Belum ada data peserta.</td>
+                            <td colspan="7" class="py-8 text-center text-slate-400">Tidak ada data peserta yang cocok.
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -184,12 +217,14 @@
         </div>
     </div>
 
-    <!-- Modal Edit Siswa -->
+    <!-- Modal Edit Siswa & Reset Tes -->
     <div id="modalEditSiswa" class="hidden fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
             <h3 class="text-base font-extrabold text-slate-900 mb-4">Edit Data Peserta</h3>
+
             <form id="formEditSiswa" method="POST" class="space-y-3 text-xs">
-                @csrf @method('PUT')
+                @csrf
+                @method('PUT')
                 <div>
                     <div class="flex justify-between items-center mb-1">
                         <label class="font-bold text-slate-700">Kode Peserta</label>
@@ -209,13 +244,28 @@
                     <input type="text" id="editKelas" name="kelas" required
                         class="w-full bg-slate-100 rounded-xl px-3.5 py-2.5 focus:ring-2 focus:ring-[#1456E8] outline-none">
                 </div>
-                <div class="flex justify-end gap-2 pt-3">
+                <div class="flex justify-end gap-2 pt-2">
                     <button type="button" onclick="document.getElementById('modalEditSiswa').classList.add('hidden')"
                         class="px-4 py-2 rounded-xl border font-bold">Batal</button>
                     <button type="submit" class="px-4 py-2 rounded-xl bg-[#1456E8] text-white font-bold">Simpan
                         Perubahan</button>
                 </div>
             </form>
+
+            <!-- Bagian Reset / Batalkan Tes Siswa -->
+            <div class="mt-5 pt-4 border-t border-slate-100">
+                <p class="text-[11px] font-bold text-slate-700 mb-1">Atur Ulang / Batalkan Tes</p>
+                <p class="text-[11px] text-slate-400 mb-3">Menghapus riwayat jawaban siswa pada sesi aktif agar siswa bisa
+                    login dan mengerjakan tes kembali dari awal.</p>
+                <form id="formResetTesSiswa" method="POST"
+                    onsubmit="return confirm('Yakin ingin mereset tes siswa ini? Seluruh jawaban sebelumnya pada sesi aktif akan dihapus.');">
+                    @csrf
+                    <button type="submit"
+                        class="w-full bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold py-2.5 rounded-xl text-xs transition">
+                        ↺ Reset & Izinkan Mengerjakan Ulang
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -240,8 +290,29 @@
     </div>
 
     <script>
+        // Otomatis reset / cari saat input diketik atau dihapus
+        let timerCari;
+        const inputCari = document.getElementById('inputCariSiswa');
+        inputCari.addEventListener('input', function() {
+            clearTimeout(timerCari);
+            if (this.value.trim() === '') {
+                window.location.href = "{{ route('admin.siswa', ['kelas' => request('kelas')]) }}";
+                return;
+            }
+            timerCari = setTimeout(() => {
+                document.getElementById('formCariSiswa').submit();
+            }, 450);
+        });
+        // Kembalikan fokus kursor ke akhir teks setelah reload pencarian
+        if (inputCari.value.length > 0) {
+            inputCari.focus();
+            inputCari.setSelectionRange(inputCari.value.length, inputCari.value.length);
+        }
+
         function bukaEditSiswa(id, kode, nama, kelas) {
-            document.getElementById('formEditSiswa').action = `/admin/siswa/${id}`;
+            const baseUrl = "{{ url('/admin/siswa') }}";
+            document.getElementById('formEditSiswa').action = `${baseUrl}/${id}`;
+            document.getElementById('formResetTesSiswa').action = `${baseUrl}/${id}/reset-tes`;
             document.getElementById('editKode').value = kode;
             document.getElementById('editNama').value = nama;
             document.getElementById('editKelas').value = kelas;
