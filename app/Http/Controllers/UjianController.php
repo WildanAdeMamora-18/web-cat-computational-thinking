@@ -17,6 +17,7 @@ class UjianController extends Controller
 
     public function showLogin()
     {
+        session()->forget('hasil_tes_id');
         return view('siswa.login');
     }
 
@@ -181,7 +182,9 @@ class UjianController extends Controller
     public function selesai()
     {
         $hasilTes = HasilTes::with('siswa')->find(session('hasil_tes_id'));
-        session()->forget('hasil_tes_id');
+        if (!$hasilTes) {
+            return redirect()->route('siswa.login');
+        }
 
         return view('siswa.selesai', compact('hasilTes'));
     }
