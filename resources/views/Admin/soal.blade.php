@@ -121,7 +121,7 @@
                                     class="bg-slate-100 text-slate-700 font-mono-code font-bold px-2.5 py-1 rounded-md">{{ $soal->kunci_jawaban }}</span>
                             </td>
                             <td class="py-3.5 px-4 text-right font-mono-code font-bold text-slate-800">
-                                {{ ($soal->ukuran_b >= 0 ? '+' : '') . number_format($soal->ukuran_b, 2) }}
+                                {{ ($soal->ukuran_b >= 0 ? '+' : '') . number_format($soal->ukuran_b, 4) }}
                             </td>
                             <td class="py-3.5 px-4 text-center">
                                 @if ($soal->status_fit)
@@ -133,8 +133,12 @@
                                 @endif
                             </td>
                             <td class="py-3.5 px-5 text-right">
-                                <button onclick='bukaEditSoal(@json($soal->makeVisible(['kunci_jawaban', 'ukuran_b'])))'
-                                    class="text-slate-600 hover:text-[#1456E8] font-semibold">Edit</button>
+                                <button type="button"
+                                    data-soal="{{ json_encode($soal->makeVisible(['kunci_jawaban', 'ukuran_b'])) }}"
+                                    onclick="bukaEditSoal(JSON.parse(this.dataset.soal))"
+                                    class="text-slate-600 hover:text-[#1456E8] font-semibold">
+                                    Edit
+                                </button>
                             </td>
                         </tr>
                     @endforeach
@@ -236,10 +240,10 @@
 
     <script>
         function bukaEditSoal(soal) {
-            document.getElementById('formEditSoal').action = `/admin/soal/${soal.id}`;
+            document.getElementById('formEditSoal').action = `{{ url('/admin/soal') }}/${soal.id}`;
             document.getElementById('judulModalSoal').innerText = `Edit Butir Soal #${soal.nomor_butir}`;
             document.getElementById('sIndikator').value = soal.indikator;
-            document.getElementById('sUkuranB').value = soal.ukuran_b;
+            document.getElementById('sUkuranB').value = Number(soal.ukuran_b).toFixed(4);
             document.getElementById('sStatusFit').value = soal.status_fit ? '1' : '0';
             document.getElementById('sTeks').value = soal.teks_soal;
             document.getElementById('sOpsiA').value = soal.opsi_a;

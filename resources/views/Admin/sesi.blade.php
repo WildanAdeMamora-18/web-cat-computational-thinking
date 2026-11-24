@@ -113,13 +113,24 @@
                                 </div>
                             </td>
                             <td class="py-4 px-5 text-right">
-                                <form action="{{ route('admin.sesi.toggle', $s) }}" method="POST" class="inline">
-                                    @csrf
-                                    <button type="submit"
-                                        class="border border-slate-200 hover:border-[#1456E8] {{ $s->status === 'aktif' ? 'text-red-600' : 'text-[#1456E8]' }} font-bold px-3 py-1.5 rounded-lg text-[11px] transition">
-                                        {{ $s->status === 'aktif' ? 'Nonaktifkan' : 'Aktifkan' }}
-                                    </button>
-                                </form>
+                                <div class="inline-flex items-center justify-end gap-2">
+                                    <form action="{{ route('admin.sesi.toggle', $s) }}" method="POST" class="inline">
+                                        @csrf
+                                        <button type="submit"
+                                            class="border border-slate-200 hover:border-[#1456E8] {{ $s->status === 'aktif' ? 'text-amber-600' : 'text-[#1456E8]' }} font-bold px-3 py-1.5 rounded-lg text-[11px] transition">
+                                            {{ $s->status === 'aktif' ? 'Nonaktifkan' : 'Aktifkan' }}
+                                        </button>
+                                    </form>
+                                    <form action="{{ route('admin.sesi.hapus', $s) }}" method="POST" class="inline"
+                                        onsubmit="return confirm('Yakin ingin menghapus sesi {{ addslashes($s->nama_sesi) }}? Semua hasil tes pada sesi ini juga akan terhapus.')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                            class="text-red-600 hover:text-red-700 hover:bg-red-50 font-bold px-2.5 py-1.5 rounded-lg text-[11px] transition">
+                                            Hapus
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @endforeach

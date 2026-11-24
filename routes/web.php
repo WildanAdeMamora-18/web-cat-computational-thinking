@@ -26,7 +26,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/', fn() => redirect()->route('admin.siswa'))->name('dashboard');
 
         // 1. Data Siswa
-        // 1. Data Siswa
         Route::get('/siswa', [AdminController::class, 'siswa'])->name('siswa');
         Route::post('/siswa', [AdminController::class, 'simpanSiswa'])->name('siswa.simpan');
         Route::put('/siswa/{siswa}', [AdminController::class, 'updateSiswa'])->name('siswa.update');
@@ -44,9 +43,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/sesi', [AdminController::class, 'sesi'])->name('sesi');
         Route::post('/sesi', [AdminController::class, 'simpanSesi'])->name('sesi.simpan');
         Route::post('/sesi/{sesi}/toggle', [AdminController::class, 'toggleSesi'])->name('sesi.toggle');
+        Route::delete('/sesi/{sesi}', [AdminController::class, 'hapusSesi'])->name('sesi.hapus');
 
         // 4. Hasil Tes & Ekspor CSV
         Route::get('/hasil', [AdminController::class, 'hasil'])->name('hasil');
+        Route::delete('/hasil/{hasil}', [AdminController::class, 'hapusHasil'])->name('hasil.hapus');
         Route::get('/export/ringkasan', [AdminController::class, 'exportRingkasanCsv'])->name('export.ringkasan');
         Route::get('/export/respons', [AdminController::class, 'exportResponsCsv'])->name('export.respons');
     });

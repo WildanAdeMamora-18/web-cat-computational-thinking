@@ -77,6 +77,7 @@ class AdminController extends Controller
         $daftarSiswa = $query->paginate(10)->withQueryString();
         $daftarKelas = Siswa::select('kelas')->distinct()->pluck('kelas');
         $kodeOtomatis = $this->generateKodePesertaBerikutnya();
+        $daftarSesi = SesiTes::latest()->get();
 
         return view('admin.siswa', compact(
             'daftarSiswa',
@@ -85,7 +86,8 @@ class AdminController extends Controller
             'sedangUjian',
             'selesaiUjian',
             'belumLogin',
-            'kodeOtomatis'
+            'kodeOtomatis',
+            'daftarSesi'
         ));
     }
 
@@ -122,24 +124,25 @@ class AdminController extends Controller
         return back()->with('sukses', "Data peserta {$siswa->kode_peserta} berhasil diperbarui.");
     }
 
-    public function resetTesSiswa(Siswa $siswa)
+    public function resetTesSiswa(Request $request, Siswa $siswa)
     {
-        $sesiAktif = SesiTes::where('status', 'aktif')->first();
+        $request->validate([
+            'sesi_id' => 'required|exists:sesi_tes,id',
+        ]);
 
-        $query = HasilTes::where('siswa_id', $siswa->id);
-        if ($sesiAktif) {
-            $query->where('sesi_id', $sesiAktif->id);
-        }
+        $sesi = SesiTes::findOrFail($request->sesi_id);
 
-        $hasilIds = $query->pluck('id');
+        $hasilIds = HasilTes::where('siswa_id', $siswa->id)
+            ->where('sesi_id', $sesi->id)
+            ->pluck('id');
 
         if ($hasilIds->isNotEmpty()) {
             Respons::whereIn('hasil_tes_id', $hasilIds)->delete();
             HasilTes::whereIn('id', $hasilIds)->delete();
-            return back()->with('sukses', "Tes untuk {$siswa->nama} ({$siswa->kode_peserta}) berhasil direset. Siswa dapat mengerjakan ulang.");
+            return back()->with('sukses', "Tes {$siswa->nama} ({$siswa->kode_peserta}) pada sesi '{$sesi->nama_sesi}' berhasil direset.");
         }
 
-        return back()->with('sukses', "Peserta {$siswa->kode_peserta} belum memiliki riwayat tes pada sesi aktif.");
+        return back()->with('sukses', "Peserta {$siswa->kode_peserta} belum memiliki riwayat tes pada sesi '{$sesi->nama_sesi}'.");
     }
 
     public function hapusSiswa(Siswa $siswa)
@@ -321,6 +324,20 @@ class AdminController extends Controller
         return back()->with('sukses', 'Status sesi tes berhasil diubah.');
     }
 
+    public function hapusSesi(SesiTes $sesi)
+    {
+        $hasilIds = HasilTes::where('sesi_id', $sesi->id)->pluck('id');
+        if ($hasilIds->isNotEmpty()) {
+            Respons::whereIn('hasil_tes_id', $hasilIds)->delete();
+            HasilTes::whereIn('id', $hasilIds)->delete();
+        }
+
+        $nama = $sesi->nama_sesi;
+        $sesi->delete();
+
+        return back()->with('sukses', "Sesi '{$nama}' beserta data hasil tesnya berhasil dihapus.");
+    }
+
     // ==========================================
     // 4. HALAMAN HASIL TES & GRAFIK SEBARAN THETA
     // ==========================================
@@ -389,6 +406,15 @@ class AdminController extends Controller
             'rerataButir',
             'bins'
         ));
+    }
+
+    public function hapusHasil(HasilTes $hasil)
+    {
+        $kode = $hasil->siswa?->kode_peserta ?? '-';
+        $hasil->respons()->delete();
+        $hasil->delete();
+
+        return back()->with('sukses', "Data hasil tes peserta {$kode} berhasil dihapus.");
     }
 
     // Ekspor 1: Ringkasan per Siswa (Google Colab)
