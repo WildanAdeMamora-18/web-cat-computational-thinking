@@ -32,7 +32,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('/siswa/{siswa}', [AdminController::class, 'updateSiswa'])->name('siswa.update');
         Route::post('/siswa/{siswa}/reset-tes', [AdminController::class, 'resetTesSiswa'])->name('siswa.reset');
         Route::delete('/siswa/{siswa}', [AdminController::class, 'hapusSiswa'])->name('siswa.hapus');
+        Route::delete('/siswa/hapus-kelas', [AdminController::class, 'hapusKelas'])->name('siswa.hapus_kelas');
         Route::post('/siswa/impor', [AdminController::class, 'imporSiswaCsv'])->name('siswa.impor');
+        Route::post('/kelas', [AdminController::class, 'tambahKelasDropdown'])->name('kelas.simpan');
+        Route::delete('/kelas', [AdminController::class, 'hapusKelasDropdown'])->name('kelas.hapus');
 
         // 2. Bank Soal
         Route::get('/soal', [AdminController::class, 'soal'])->name('soal');

@@ -17,6 +17,10 @@
                 class="bg-[#1456E8] hover:bg-[#0F46C4] text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-2 shadow-xs transition">
                 <span>+ Tambah Siswa</span>
             </button>
+            <button type="button" onclick="document.getElementById('modalHapusKelas').classList.remove('hidden')"
+                class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-bold px-3.5 py-2.5 rounded-xl transition">
+                🗑 Kelola / Hapus Kelas
+            </button>
         </div>
     </div>
 
@@ -192,26 +196,43 @@
                 @csrf
                 <div>
                     <label class="font-bold text-slate-700 block mb-1">Kelas *</label>
-                    @php
-                        $opsiKelasDefault = collect(['X MPK 1', 'X MPK 2', 'X MPK 3', 'X MPK 4', 'X MPK 5'])
-                            ->merge($daftarKelas)
-                            ->unique()
-                            ->sort()
-                            ->values();
-                    @endphp
-                    <select id="pilihKelasTambah" onchange="gantiKelasTambah(this.value)"
-                        class="w-full bg-slate-100 rounded-xl px-3.5 py-2.5 font-semibold text-slate-800 focus:ring-2 focus:ring-[#1456E8] outline-none">
-                        @foreach ($opsiKelasDefault as $k)
-                            <option value="{{ $k }}" {{ $k === 'X MPK 1' ? 'selected' : '' }}>
-                                {{ $k }}</option>
-                        @endforeach
-                        <option value="__LAINNYA__">+ Kelas Lainnya (Ketik Manual)</option>
-                    </select>
+                    <div class="flex items-center gap-1.5">
+                        <select id="pilihKelasTambah" onchange="gantiKelasTambah(this.value)"
+                            class="flex-1 bg-slate-100 rounded-xl px-3.5 py-2.5 font-semibold text-slate-800 focus:ring-2 focus:ring-[#1456E8] outline-none">
+                            @forelse($opsiKelasDropdown as $k)
+                                <option value="{{ $k }}" {{ $loop->first ? 'selected' : '' }}>
+                                    {{ $k }}</option>
+                            @empty
+                                <option value="" disabled selected>Belum ada kelas</option>
+                            @endforelse
+                        </select>
 
-                    <!-- Input tersembunyi / manual yang dikirim ke server -->
-                    <input type="text" id="inputKelasTambah" name="kelas" value="X MPK 1" required
-                        placeholder="Contoh: X MPK 6"
-                        class="hidden mt-2 w-full bg-slate-100 rounded-xl px-3.5 py-2.5 uppercase font-semibold focus:ring-2 focus:ring-[#1456E8] outline-none">
+                        <button type="button" onclick="bukaFormKelasBaru()" title="Tambah kelas ke dropdown"
+                            class="bg-blue-50 hover:bg-blue-100 text-[#1456E8] border border-blue-200 font-bold px-3 py-2.5 rounded-xl transition shrink-0">
+                            + Tambah
+                        </button>
+                        <button type="button" onclick="hapusKelasDariDropdown()"
+                            title="Hapus kelas yang dipilih dari dropdown"
+                            class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold px-3 py-2.5 rounded-xl transition shrink-0">
+                            Hapus
+                        </button>
+                    </div>
+
+                    <!-- Box mini untuk tambah kelas baru langsung ke dropdown -->
+                    <div id="boxTambahKelasBaru"
+                        class="hidden mt-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-1.5">
+                        <input type="text" id="inputNamaKelasBaru" placeholder="Contoh: X MPK 6"
+                            class="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs uppercase font-semibold outline-none focus:border-[#1456E8]">
+                        <button type="button" onclick="simpanKelasBaru()"
+                            class="bg-[#1456E8] text-white font-bold px-3 py-1.5 rounded-lg text-[11px]">Simpan</button>
+                        <button type="button"
+                            onclick="document.getElementById('boxTambahKelasBaru').classList.add('hidden')"
+                            class="bg-white border border-slate-200 text-slate-600 font-bold px-2.5 py-1.5 rounded-lg text-[11px]">Batal</button>
+                    </div>
+
+                    <!-- Nilai kelas terpilih yang dikirim saat submit form siswa -->
+                    <input type="hidden" id="inputKelasTambah" name="kelas"
+                        value="{{ $opsiKelasDropdown->first() ?? '' }}" required>
                 </div>
 
                 <div>
@@ -301,6 +322,49 @@
         </div>
     </div>
 
+    <!-- Modal Kelola / Hapus Kelas -->
+    <div id="modalHapusKelas"
+        class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-base font-extrabold text-slate-900">Kelola & Hapus Kelas</h3>
+                <button type="button" onclick="document.getElementById('modalHapusKelas').classList.add('hidden')"
+                    class="text-slate-400 hover:text-slate-600 text-sm font-bold">✕</button>
+            </div>
+            <p class="text-[11px] text-slate-500 mb-4">Menghapus kelas akan menghapus seluruh data siswa dan riwayat tes di
+                dalam kelas tersebut.</p>
+
+            <div class="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                @forelse($rekapKelas as $rk)
+                    <div
+                        class="flex items-center justify-between bg-slate-50 border border-slate-200/70 rounded-xl px-3.5 py-2.5">
+                        <div>
+                            <p class="text-xs font-bold text-slate-800">{{ $rk->kelas }}</p>
+                            <p class="text-[11px] text-slate-500">{{ $rk->total_siswa }} siswa terdaftar</p>
+                        </div>
+                        <form action="{{ route('admin.siswa.hapus_kelas') }}" method="POST"
+                            onsubmit="return confirm('PERINGATAN: Yakin ingin menghapus kelas {{ addslashes($rk->kelas) }} beserta seluruh ({{ $rk->total_siswa }}) siswanya? Tindakan ini tidak bisa dibatalkan.');">
+                            @csrf
+                            @method('DELETE')
+                            <input type="hidden" name="kelas" value="{{ $rk->kelas }}">
+                            <button type="submit"
+                                class="bg-red-50 hover:bg-red-600 text-red-600 hover:text-white border border-red-200 font-bold px-3 py-1.5 rounded-lg text-[11px] transition">
+                                Hapus Kelas
+                            </button>
+                        </form>
+                    </div>
+                @empty
+                    <p class="text-center text-xs text-slate-400 py-6">Belum ada kelas yang terdaftar.</p>
+                @endforelse
+            </div>
+
+            <div class="flex justify-end pt-4 mt-4 border-t border-slate-100">
+                <button type="button" onclick="document.getElementById('modalHapusKelas').classList.add('hidden')"
+                    class="px-4 py-2 rounded-xl border text-xs font-bold">Tutup</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Impor CSV Siswa -->
     <div id="modalImporSiswa" class="hidden fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl text-xs">
@@ -354,7 +418,7 @@
 
         function ambilKodeBerikutnya(kelas) {
             const inputKode = document.getElementById('tambahKodeOtomatis');
-            if (!kelas.trim()) {
+            if (!kelas || !kelas.trim()) {
                 inputKode.value = '-';
                 return;
             }
@@ -371,24 +435,86 @@
         }
 
         function gantiKelasTambah(nilai) {
-            const inputManual = document.getElementById('inputKelasTambah');
-
-            if (nilai === '__LAINNYA__') {
-                inputManual.classList.remove('hidden');
-                inputManual.value = '';
-                inputManual.focus();
-                document.getElementById('tambahKodeOtomatis').value = '-';
-            } else {
-                inputManual.classList.add('hidden');
-                inputManual.value = nilai;
-                ambilKodeBerikutnya(nilai);
-            }
+            document.getElementById('inputKelasTambah').value = nilai;
+            ambilKodeBerikutnya(nilai);
         }
 
-        document.getElementById('inputKelasTambah').addEventListener('input', function() {
-            clearTimeout(timerCekKode);
-            const nilai = this.value;
-            timerCekKode = setTimeout(() => ambilKodeBerikutnya(nilai), 300);
-        });
+        function bukaFormKelasBaru() {
+            document.getElementById('boxTambahKelasBaru').classList.remove('hidden');
+            const input = document.getElementById('inputNamaKelasBaru');
+            input.value = '';
+            input.focus();
+        }
+
+        function simpanKelasBaru() {
+            const input = document.getElementById('inputNamaKelasBaru');
+            const nama = input.value.trim().toUpperCase();
+            if (!nama) return;
+
+            fetch("{{ route('admin.kelas.simpan') }}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        nama
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    const select = document.getElementById('pilihKelasTambah');
+                    let ada = Array.from(select.options).some(opt => opt.value === data.nama);
+
+                    if (!ada) {
+                        const emptyOpt = Array.from(select.options).find(opt => opt.value === '');
+                        if (emptyOpt) emptyOpt.remove();
+
+                        const opt = new Option(data.nama, data.nama, true, true);
+                        select.add(opt);
+                    }
+                    select.value = data.nama;
+                    gantiKelasTambah(data.nama);
+                    document.getElementById('boxTambahKelasBaru').classList.add('hidden');
+                });
+        }
+
+        function hapusKelasDariDropdown() {
+            const select = document.getElementById('pilihKelasTambah');
+            const nama = select.value;
+            if (!nama) return;
+
+            if (!confirm(
+                    `Hapus "${nama}" dari daftar pilihan dropdown? (Data siswa yang sudah terdaftar tidak akan terhapus)`))
+                return;
+
+            fetch("{{ route('admin.kelas.hapus') }}", {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        nama
+                    })
+                })
+                .then(res => res.json())
+                .then(() => {
+                    const idx = select.selectedIndex;
+                    if (idx >= 0) select.remove(idx);
+
+                    if (select.options.length > 0) {
+                        select.selectedIndex = 0;
+                        gantiKelasTambah(select.value);
+                    } else {
+                        const emptyOpt = new Option('Belum ada kelas', '', true, true);
+                        emptyOpt.disabled = true;
+                        select.add(emptyOpt);
+                        gantiKelasTambah('');
+                    }
+                });
+        }
     </script>
 @endsection

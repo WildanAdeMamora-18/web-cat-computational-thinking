@@ -9,6 +9,7 @@ use App\Models\SesiTes;
 use App\Models\Siswa;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
 {
@@ -78,6 +79,13 @@ class AdminController extends Controller
         $daftarKelas  = Siswa::select('kelas')->distinct()->orderBy('kelas')->pluck('kelas');
         $kodeOtomatis = $this->generateKodePesertaBerikutnya('X MPK 1');
         $daftarSesi = SesiTes::latest()->get();
+        $rekapKelas = Siswa::select('kelas', DB::raw('COUNT(*) as total_siswa'))
+            ->groupBy('kelas')
+            ->orderBy('kelas')
+            ->get();
+        $opsiKelasDropdown = DB::table('kelas')->orderBy('nama')->pluck('nama');
+        $kelasDefault      = $opsiKelasDropdown->first() ?? 'X MPK 1';
+        $kodeOtomatis      = $this->generateKodePesertaBerikutnya($kelasDefault);
 
         return view('admin.siswa', compact(
             'daftarSiswa',
@@ -87,7 +95,9 @@ class AdminController extends Controller
             'selesaiUjian',
             'belumLogin',
             'kodeOtomatis',
-            'daftarSesi'
+            'daftarSesi',
+            'rekapKelas',
+            'opsiKelasDropdown',
         ));
     }
 
@@ -108,6 +118,12 @@ class AdminController extends Controller
         ]);
 
         return back()->with('sukses', "Peserta baru berhasil ditambahkan dengan kode {$kodeBaru} ({$kelasBersih}).");
+
+        DB::table('kelas')->insertOrIgnore([
+            'nama'       => $kelasBersih,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 
     public function getNextKode(Request $request)
@@ -158,6 +174,55 @@ class AdminController extends Controller
     {
         $siswa->delete();
         return back()->with('sukses', 'Peserta berhasil dihapus.');
+    }
+
+    public function hapusKelas(Request $request)
+    {
+        $request->validate([
+            'kelas' => 'required|string|max:30',
+        ]);
+
+        $kelas = trim($request->kelas);
+        $siswaIds = Siswa::where('kelas', $kelas)->pluck('id');
+
+        if ($siswaIds->isEmpty()) {
+            return back()->with('sukses', "Tidak ada peserta pada kelas {$kelas}.");
+        }
+
+        DB::transaction(function () use ($siswaIds, $kelas) {
+            $hasilIds = HasilTes::whereIn('siswa_id', $siswaIds)->pluck('id');
+            if ($hasilIds->isNotEmpty()) {
+                Respons::whereIn('hasil_tes_id', $hasilIds)->delete();
+                HasilTes::whereIn('id', $hasilIds)->delete();
+            }
+            Siswa::where('kelas', $kelas)->delete();
+        });
+
+        return back()->with('sukses', "Kelas {$kelas} beserta {$siswaIds->count()} peserta di dalamnya berhasil dihapus.");
+    }
+
+    public function tambahKelasDropdown(Request $request)
+    {
+        $request->validate(['nama' => 'required|string|max:30']);
+        $nama = strtoupper(trim($request->nama));
+
+        DB::table('kelas')->insertOrIgnore([
+            'nama'       => $nama,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return response()->json(['status' => 'ok', 'nama' => $nama]);
+    }
+
+    public function hapusKelasDropdown(Request $request)
+    {
+        $request->validate(['nama' => 'required|string|max:30']);
+        $nama = strtoupper(trim($request->nama));
+
+        DB::table('kelas')->where('nama', $nama)->delete();
+
+        return response()->json(['status' => 'ok', 'nama' => $nama]);
     }
 
     public function imporSiswaCsv(Request $request)
