@@ -27,6 +27,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // 1. Data Siswa
         Route::get('/siswa', [AdminController::class, 'siswa'])->name('siswa');
+        Route::get('/siswa/next-kode', [AdminController::class, 'getNextKode'])->name('siswa.next_kode');
         Route::post('/siswa', [AdminController::class, 'simpanSiswa'])->name('siswa.simpan');
         Route::put('/siswa/{siswa}', [AdminController::class, 'updateSiswa'])->name('siswa.update');
         Route::post('/siswa/{siswa}/reset-tes', [AdminController::class, 'resetTesSiswa'])->name('siswa.reset');

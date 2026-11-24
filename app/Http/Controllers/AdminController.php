@@ -75,8 +75,8 @@ class AdminController extends Controller
         $belumLogin  = max(0, $totalSiswa - ($sedangUjian + $selesaiUjian));
 
         $daftarSiswa = $query->paginate(10)->withQueryString();
-        $daftarKelas = Siswa::select('kelas')->distinct()->pluck('kelas');
-        $kodeOtomatis = $this->generateKodePesertaBerikutnya();
+        $daftarKelas  = Siswa::select('kelas')->distinct()->orderBy('kelas')->pluck('kelas');
+        $kodeOtomatis = $this->generateKodePesertaBerikutnya('X MPK 1');
         $daftarSesi = SesiTes::latest()->get();
 
         return view('admin.siswa', compact(
@@ -98,15 +98,24 @@ class AdminController extends Controller
             'kelas' => 'required|string|max:30',
         ]);
 
-        $kodeBaru = $this->generateKodePesertaBerikutnya();
+        $kelasBersih = strtoupper(trim($request->kelas));
+        $kodeBaru    = $this->generateKodePesertaBerikutnya($kelasBersih);
 
         Siswa::create([
             'kode_peserta' => $kodeBaru,
             'nama'         => strtoupper(trim($request->nama)),
-            'kelas'        => trim($request->kelas),
+            'kelas'        => $kelasBersih,
         ]);
 
-        return back()->with('sukses', "Peserta baru berhasil ditambahkan dengan kode {$kodeBaru}.");
+        return back()->with('sukses', "Peserta baru berhasil ditambahkan dengan kode {$kodeBaru} ({$kelasBersih}).");
+    }
+
+    public function getNextKode(Request $request)
+    {
+        $kelas = $request->query('kelas', 'X MPK 1');
+        return response()->json([
+            'kode' => $this->generateKodePesertaBerikutnya($kelas),
+        ]);
     }
 
     public function updateSiswa(Request $request, Siswa $siswa)
@@ -476,14 +485,41 @@ class AdminController extends Controller
     }
 
     // Tambahkan fungsi private ini di dalam AdminController
-    private function generateKodePesertaBerikutnya(): string
+    private function extractPrefixKelas(string $kelas): string
     {
-        $kodeTerakhir = Siswa::where('kode_peserta', 'like', 'MPK1-%')
-            ->orderByRaw('CAST(SUBSTRING(kode_peserta, 6) AS UNSIGNED) DESC')
-            ->value('kode_peserta');
+        $k = strtoupper(trim($kelas));
 
-        $nomorBerikutnya = $kodeTerakhir ? ((int) substr($kodeTerakhir, 5)) + 1 : 1;
+        // Jika berpola MPK (contoh: "X MPK 1" -> "MPK1", "X MPK 2" -> "MPK2", "MPK 3" -> "MPK3")
+        if (preg_match('/MPK\s*(\d+)/', $k, $match)) {
+            return 'MPK' . $match[1];
+        }
 
-        return 'MPK1-' . str_pad($nomorBerikutnya, 3, '0', STR_PAD_LEFT);
+        // Fallback jika memakai nama kelas lain (contoh: "X RPL 1" -> "RPL1")
+        $tanpaTingkat = preg_replace('/^(XII|XI|X)\s+/', '', $k);
+        $prefix = preg_replace('/[^A-Z0-9]/', '', $tanpaTingkat);
+
+        return $prefix !== '' ? $prefix : 'MPK1';
+    }
+
+    private function generateKodePesertaBerikutnya(string $kelas = 'X MPK 1'): string
+    {
+        $prefix        = $this->extractPrefixKelas($kelas);
+        $prefixPattern = $prefix . '-';
+
+        $kodeList = Siswa::where('kode_peserta', 'like', $prefixPattern . '%')
+            ->pluck('kode_peserta');
+
+        $maxNomor = 0;
+        foreach ($kodeList as $kode) {
+            $bagianAngka = substr($kode, strlen($prefixPattern));
+            if (is_numeric($bagianAngka)) {
+                $angka = (int) $bagianAngka;
+                if ($angka > $maxNomor) {
+                    $maxNomor = $angka;
+                }
+            }
+        }
+
+        return $prefixPattern . str_pad($maxNomor + 1, 3, '0', STR_PAD_LEFT);
     }
 }

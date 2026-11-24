@@ -184,31 +184,53 @@
     </div>
 
     <!-- Modal Tambah Siswa -->
-    <div id="modalTambahSiswa" class="hidden fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-center p-4">
+    <div id="modalTambahSiswa"
+        class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
             <h3 class="text-base font-extrabold text-slate-900 mb-4">Tambah Peserta Baru</h3>
             <form action="{{ route('admin.siswa.simpan') }}" method="POST" class="space-y-3 text-xs">
                 @csrf
                 <div>
+                    <label class="font-bold text-slate-700 block mb-1">Kelas *</label>
+                    @php
+                        $opsiKelasDefault = collect(['X MPK 1', 'X MPK 2', 'X MPK 3', 'X MPK 4', 'X MPK 5'])
+                            ->merge($daftarKelas)
+                            ->unique()
+                            ->sort()
+                            ->values();
+                    @endphp
+                    <select id="pilihKelasTambah" onchange="gantiKelasTambah(this.value)"
+                        class="w-full bg-slate-100 rounded-xl px-3.5 py-2.5 font-semibold text-slate-800 focus:ring-2 focus:ring-[#1456E8] outline-none">
+                        @foreach ($opsiKelasDefault as $k)
+                            <option value="{{ $k }}" {{ $k === 'X MPK 1' ? 'selected' : '' }}>
+                                {{ $k }}</option>
+                        @endforeach
+                        <option value="__LAINNYA__">+ Kelas Lainnya (Ketik Manual)</option>
+                    </select>
+
+                    <!-- Input tersembunyi / manual yang dikirim ke server -->
+                    <input type="text" id="inputKelasTambah" name="kelas" value="X MPK 1" required
+                        placeholder="Contoh: X MPK 6"
+                        class="hidden mt-2 w-full bg-slate-100 rounded-xl px-3.5 py-2.5 uppercase font-semibold focus:ring-2 focus:ring-[#1456E8] outline-none">
+                </div>
+
+                <div>
                     <div class="flex justify-between items-center mb-1">
                         <label class="font-bold text-slate-700">Kode Peserta</label>
-                        <span class="text-[10px] font-semibold text-[#1456E8] bg-[#EEF2FF] px-2 py-0.5 rounded">Otomatis &
+                        <span class="text-[10px] font-semibold text-[#1456E8] bg-blue-50 px-2 py-0.5 rounded">Otomatis &
                             Terkunci</span>
                     </div>
-                    <input type="text" value="{{ $kodeOtomatis }}" readonly
+                    <input type="text" id="tambahKodeOtomatis" value="{{ $kodeOtomatis }}" readonly
                         class="w-full bg-slate-200/80 text-slate-600 font-bold rounded-xl px-3.5 py-2.5 uppercase font-mono-code cursor-not-allowed outline-none">
                 </div>
+
                 <div>
                     <label class="font-bold text-slate-700 block mb-1">Nama Lengkap *</label>
-                    <input type="text" name="nama" placeholder="Masukkan nama lengkap siswa" required
+                    <input type="text" name="nama" placeholder="Nama lengkap siswa" required
                         class="w-full bg-slate-100 rounded-xl px-3.5 py-2.5 uppercase focus:ring-2 focus:ring-[#1456E8] outline-none">
                 </div>
-                <div>
-                    <label class="font-bold text-slate-700 block mb-1">Kelas *</label>
-                    <input type="text" name="kelas" value="X MPK 1" required
-                        class="w-full bg-slate-100 rounded-xl px-3.5 py-2.5 focus:ring-2 focus:ring-[#1456E8] outline-none">
-                </div>
-                <div class="flex justify-end gap-2 pt-3">
+
+                <div class="flex justify-end gap-2 pt-2">
                     <button type="button" onclick="document.getElementById('modalTambahSiswa').classList.add('hidden')"
                         class="px-4 py-2 rounded-xl border font-bold">Batal</button>
                     <button type="submit" class="px-4 py-2 rounded-xl bg-[#1456E8] text-white font-bold">Simpan</button>
@@ -302,6 +324,7 @@
     <script>
         // Otomatis reset / cari saat input diketik atau dihapus
         let timerCari;
+        let timerCekKode;
         const inputCari = document.getElementById('inputCariSiswa');
         inputCari.addEventListener('input', function() {
             clearTimeout(timerCari);
@@ -328,5 +351,44 @@
             document.getElementById('editKelas').value = kelas;
             document.getElementById('modalEditSiswa').classList.remove('hidden');
         }
+
+        function ambilKodeBerikutnya(kelas) {
+            const inputKode = document.getElementById('tambahKodeOtomatis');
+            if (!kelas.trim()) {
+                inputKode.value = '-';
+                return;
+            }
+
+            inputKode.value = 'Memuat...';
+            fetch(`{{ route('admin.siswa.next_kode') }}?kelas=${encodeURIComponent(kelas)}`)
+                .then(res => res.json())
+                .then(data => {
+                    inputKode.value = data.kode;
+                })
+                .catch(() => {
+                    inputKode.value = 'Gagal memuat';
+                });
+        }
+
+        function gantiKelasTambah(nilai) {
+            const inputManual = document.getElementById('inputKelasTambah');
+
+            if (nilai === '__LAINNYA__') {
+                inputManual.classList.remove('hidden');
+                inputManual.value = '';
+                inputManual.focus();
+                document.getElementById('tambahKodeOtomatis').value = '-';
+            } else {
+                inputManual.classList.add('hidden');
+                inputManual.value = nilai;
+                ambilKodeBerikutnya(nilai);
+            }
+        }
+
+        document.getElementById('inputKelasTambah').addEventListener('input', function() {
+            clearTimeout(timerCekKode);
+            const nilai = this.value;
+            timerCekKode = setTimeout(() => ambilKodeBerikutnya(nilai), 300);
+        });
     </script>
 @endsection
