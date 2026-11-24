@@ -12,6 +12,7 @@ Route::middleware('siswa.auth')->prefix('ujian')->name('ujian.')->group(function
     Route::get('/petunjuk', [UjianController::class, 'petunjuk'])->name('petunjuk');
     Route::get('/tes', [UjianController::class, 'tampilSoal'])->name('tes');
     Route::post('/submit', [UjianController::class, 'submitJawaban'])->name('submit');
+    Route::get('/submit', fn() => redirect()->route('ujian.tes')); // Pengaman jika browser auto-reload
     Route::post('/catat-keluar-tab', [UjianController::class, 'catatKeluarTab'])->name('keluar_tab');
     Route::get('/selesai', [UjianController::class, 'selesai'])->name('selesai');
 });

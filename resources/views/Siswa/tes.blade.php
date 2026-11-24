@@ -93,6 +93,14 @@
                 @endforeach
             </div>
 
+            <!-- Notifikasi jika koneksi terputus saat mengirim jawaban -->
+            <div id="alertOffline"
+                class="hidden mt-4 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold p-3.5 rounded-2xl flex items-center gap-2.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping shrink-0"></span>
+                <span id="teksOffline">Koneksi internet terputus. Menunggu jaringan pulih untuk mengirim jawaban
+                    otomatis...</span>
+            </div>
+
             <button type="submit" id="btnKirim"
                 class="mt-5 w-full bg-gradient-to-r from-[#1456E8] to-[#1D4ED8] hover:from-[#0F46C4] hover:to-[#1E40AF] text-white font-bold py-4 rounded-2xl shadow-md shadow-blue-500/20 transition flex items-center justify-center gap-2">
                 <span>Kirim Jawaban</span>
@@ -162,13 +170,73 @@
             }
         });
 
-        // 4. Deteksi siswa keluar tab / pindah aplikasi & laporkan ke Admin
+        // 4. Deteksi siswa keluar tab & tangani submit tahan putus-nyambung internet
         let sedangSubmit = false;
-        document.getElementById('formJawaban').addEventListener('submit', function() {
+        const formJawaban = document.getElementById('formJawaban');
+        const btnKirim = document.getElementById('btnKirim');
+        const alertOffline = document.getElementById('alertOffline');
+
+        async function kirimJawabanAman() {
             sedangSubmit = true;
-            const btn = document.getElementById('btnKirim');
-            btn.disabled = true;
-            btn.innerHTML = '<span>Menyimpan Respons...</span>';
+            btnKirim.disabled = true;
+            btnKirim.innerHTML = '<span>Menyimpan Respons...</span>';
+            alertOffline.classList.add('hidden');
+
+            // Jika jelas sedang offline sebelum request dikirim
+            if (!navigator.onLine) {
+                tungguInternetKembali();
+                return;
+            }
+
+            try {
+                const response = await fetch(formJawaban.action, {
+                    method: 'POST',
+                    body: new FormData(formJawaban),
+                    credentials: 'same-origin'
+                });
+
+                if (response.status === 419) {
+                    // Token CSRF kedaluwarsa, muat ulang halaman soal dengan aman
+                    window.location.href = "{{ route('ujian.tes') }}";
+                    return;
+                }
+
+                if (response.redirected) {
+                    window.location.href = response.url;
+                    return;
+                }
+
+                if (response.ok) {
+                    window.location.href = "{{ route('ujian.tes') }}";
+                    return;
+                }
+
+                throw new Error('Server error');
+            } catch (err) {
+                // Gagal mengirim karena internet terputus di tengah jalan
+                tungguInternetKembali();
+            }
+        }
+
+        function tungguInternetKembali() {
+            sedangSubmit = false;
+            alertOffline.classList.remove('hidden');
+            btnKirim.disabled = true;
+            btnKirim.innerHTML = '<span>Menunggu Internet...</span>';
+
+            const cobaLagi = () => {
+                window.removeEventListener('online', cobaLagi);
+                kirimJawabanAman();
+            };
+
+            window.addEventListener('online', cobaLagi);
+        }
+
+        formJawaban.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (!sedangSubmit) {
+                kirimJawabanAman();
+            }
         });
 
         document.addEventListener('visibilitychange', function() {
